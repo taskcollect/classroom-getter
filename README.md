@@ -31,6 +31,8 @@ HTTP Spec
   * Response codes
      * 200 OK - The request proceeded without any errors
      * 400 Bad Request - The request sent to the microservice was malformed
+     * 401 Unauthorized - Failed Google Classroom authentication
+     * 403 Forbidden - Yikes. Banned from Google Classroom?
      * 500 Internal Server Error - The microservice hit an error
 
   * Response body (JSON)
