@@ -15,7 +15,7 @@ HTTP Spec
 * GET /v1/tasks
   * Request body (JSON)
 
-    ```json
+    ```jsonc
     {
         "user": "The person's username",
         "secret": "The person's authentication token",
@@ -35,7 +35,7 @@ HTTP Spec
 
   * Response body (JSON)
     
-    ```json
+    ```jsonc
     [
         {
             "task": "Task name",
