@@ -37,7 +37,7 @@ HTTP Spec
     
     ```json
     [
-        [
+        {
             "task": "Task name",
             "subbject": "Subject name",
             "desc": "Task description",
@@ -46,6 +46,6 @@ HTTP Spec
             "duetime": [23, 59],
             // Overdue status: 1 if overdue, 0 if not.
             "overdue": 1
-        ]
+        }
     ]
     ```
