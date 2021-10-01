@@ -23,6 +23,11 @@
 		"go.goroot": "/usr/local/go"
 	},
 
+	"remoteEnv": {
+		"CGO_ENABLED": "0",
+		"GOOS": "linux"
+	},
+
 	// wheer the files are in the container, this should be vol-mounted in the docker-compose file
 	"workspaceFolder": "/root/workspace",
 }
