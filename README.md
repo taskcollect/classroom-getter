@@ -46,8 +46,7 @@ HTTP Spec
             "link": "Task hyperlink",
             "duedate": [2021, 06, 23],
             "duetime": [23, 59],
-            // Overdue status: 1 if overdue, 0 if not.
-            "overdue": 1
+            "overdue": true
         }
     ]
     ```

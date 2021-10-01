@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -11,6 +11,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/", handler)
-	fmt.Println("gobase test server: starting on port 2000")
+	log.Println("Starting test server on port 2000.")
 	http.ListenAndServe(":2000", nil)
 }
