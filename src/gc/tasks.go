@@ -87,7 +87,13 @@ func GetTasks(secret []byte) []byte {
 
 		wg.Wait()
 		tasks = []byte(taskstr)
-		tasks[len(tasks)-1] = byte(']')
+
+		if tasks[len(tasks)-1] == ',' {
+			tasks[len(tasks)-1] = byte(']')
+		} else {
+			taskstr += "]"
+			tasks = []byte(taskstr)
+		}
 	}
 
 	return tasks
