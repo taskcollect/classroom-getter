@@ -11,7 +11,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-func getTask(s *classroom.StudentSubmission, srv *classroom.Service, taskstr *string) {
+func getTask(s *classroom.StudentSubmission, srv *classroom.Service, class string, taskstr *string) {
 	var overdue string
 
 	if s.Late {
@@ -30,7 +30,7 @@ func getTask(s *classroom.StudentSubmission, srv *classroom.Service, taskstr *st
 	desc := base64.StdEncoding.EncodeToString([]byte(gctask.Description))
 
 	task := "{\"task\":\"" + title + "\","
-	task += "\"class\":\"" + "CLASS" + "\","
+	task += "\"class\":\"" + class + "\","
 	task += "\"desc\":\"" + desc + "\","
 	task += "\"link\":\"" + gctask.AlternateLink + "\","
 	task += "\"res\":\"" + "RES" + "\","
@@ -49,7 +49,7 @@ func getSubmissions(c *classroom.Course, srv *classroom.Service, taskstr *string
 	}
 
 	for _, s := range submissions.StudentSubmissions {
-		go getTask(s, srv, taskstr)
+		go getTask(s, srv, c.Name, taskstr)
 	}
 }
 
