@@ -2,29 +2,31 @@ classroom-svc
 =============
 TaskCollect microservice for interacting with Google Classroom.
 
-Developer notes
----------------
-**In progress.**
+Description
+-----------
 
-All platforms which use Google authentication need to be treated separately. As
-we need to use the Google-preferred way of authentication (with the Google auth
-dialog and whatnot), the TaskCollect user manager needs to be built in a way
-that allows this. We shall find out how to do this during `classroom-svc`
-development.
+`classroom-svc` is a microservice which runs an HTTP server on port 2000. Its
+purpose is to retrieve information for a student's assignments from Google
+Classroom. Requests and responses are done via the HTTP server, with their
+format detailed in the [HTTP Spec](#http-spec).
 
-Another important aspect that Google allows for (and promotes) is working with
-partial resources. The Google API supports requesting certain data fields to
-minimise the amount of overhead, thus *significantly* increasing performance.
-More on this here: https://developers.google.com/classroom/guides/performance
+The microservice uses the following Go libraries provided by Google for easier
+communication with the Google Classroom API:
+
+  * `google.golang.org/api/classroom/v1`
+  * `golang.org/x/oauth2/google`
+
+Not that it really matters, as dependencies are automatically managed.
 
 HTTP Spec
 ---------
+
 * GET /v1/tasks
   * Request body (JSON)
 
 	```jsonc
 	{
-		"user": "The person's username",
+		"user": "The person's student ID. No 'CURRIC\\'.",
 		"secret": "The person's authentication token",
 		"fields": [
 			/*
@@ -52,9 +54,10 @@ HTTP Spec
 	[
 		{
 			"task": "Task name",
-			"subbject": "Subject name",
+			"class": "Class name",
 			"desc": "Task description",
 			"link": "Task hyperlink",
+			"res": ["reslink1", "reslink2"],
 			"duedate": /* Timestamp. */,
 			"overdue": false
 		}
