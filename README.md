@@ -26,7 +26,6 @@ HTTP Spec
 
 	```jsonc
 	{
-		"user": "The person's student ID. No 'CURRIC\\'.",
 		"secret": "The person's authentication token",
 		"fields": [
 			/*
