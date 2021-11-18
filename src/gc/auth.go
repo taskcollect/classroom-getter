@@ -3,18 +3,17 @@ package gc
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"golang.org/x/oauth2"
 )
 
-func getClient(config *oauth2.Config, secret []byte) *http.Client {
+func getClient(config *oauth2.Config, secret []byte) (*http.Client, error) {
 	tok, err := tokenFromFile(secret)
 	if err != nil {
-		log.Printf("500: Auth error: %v", err)
+		return nil, err
 	}
-	return config.Client(context.Background(), tok)
+	return config.Client(context.Background(), tok), nil
 }
 
 func tokenFromFile(secret []byte) (*oauth2.Token, error) {
