@@ -3,6 +3,7 @@ package gc
 import (
 	"context"
 	"encoding/base64"
+	"io/ioutil"
 	"log"
 	"sync"
 
@@ -23,7 +24,7 @@ func getTask(s *classroom.StudentSubmission, srv *classroom.Service, class strin
 	gctask, err := srv.Courses.CourseWork.Get(s.CourseId, s.CourseWorkId).Do()
 
 	if err != nil {
-		log.Fatalf("500: Unable to retrieve task. %v", err)
+		log.Printf("500: Unable to retrieve task. %v", err)
 	}
 
 	title := base64.StdEncoding.EncodeToString([]byte(gctask.Title))
@@ -45,7 +46,7 @@ func getSubmissions(c *classroom.Course, srv *classroom.Service, taskstr *string
 	submissions, err := srv.Courses.CourseWork.StudentSubmissions.List(c.Id, "-").Do()
 
 	if err != nil {
-		log.Fatalf("500: Unable to retrieve submissions. %v", err)
+		log.Printf("500: Unable to retrieve submissions. %v", err)
 	}
 
 	for _, s := range submissions.StudentSubmissions {
@@ -53,28 +54,35 @@ func getSubmissions(c *classroom.Course, srv *classroom.Service, taskstr *string
 	}
 }
 
-func GetTasks(secret []byte) []byte {
+func GetTasks(secret []byte) ([]byte, error) {
 	var wg sync.WaitGroup
 	var tasks []byte
 
 	ctx := context.Background()
 
-	config, err := google.ConfigFromJSON(secret, classroom.ClassroomCoursesReadonlyScope)
-
+	b, err := ioutil.ReadFile("gctok.json")
 	if err != nil {
-		log.Fatalf("500: Unable to parse client secret file to config: %v", err)
+		return nil, err
 	}
 
-	client := getClient(config, secret)
-	srv, err := classroom.NewService(ctx, option.WithHTTPClient(client))
-
+	config, err := google.ConfigFromJSON(b, classroom.ClassroomCoursesReadonlyScope)
 	if err != nil {
-		log.Fatalf("500: Unable to create classroom Client %v", err)
+		return nil, err
+	}
+
+	client, err := getClient(config, secret)
+	if err != nil {
+		return nil, err
+	}
+
+	srv, err := classroom.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, err
 	}
 
 	r, err := srv.Courses.List().CourseStates("ACTIVE").Do()
 	if err != nil {
-		log.Fatalf("500: Unable to retrieve courses. %v", err)
+		return nil, err
 	}
 
 	if len(r.Courses) > 0 {
@@ -96,5 +104,5 @@ func GetTasks(secret []byte) []byte {
 		}
 	}
 
-	return tasks
+	return tasks, nil
 }
