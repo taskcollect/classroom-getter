@@ -1,38 +1,50 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
-	"main/gc"
-	"net/http"
+	"main/auth"
+	"main/call"
+	"main/fetch"
+	"time"
 
-	"github.com/buger/jsonparser"
+	"golang.org/x/oauth2"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	req, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(400)
-		log.Printf("400: Failed to read request body.")
-	}
-
-	secret, _, _, err := jsonparser.Get(req, "secret")
-	if err != nil {
-		w.WriteHeader(400)
-		log.Printf("400: Failed to get secret from JSON request body. %v", err)
-	}
-
-	tasks, err := gc.GetTasks(secret)
-	if err != nil {
-		w.WriteHeader(500)
-		log.Printf("500: Failed to get tasks. %v", err)
-	}
-
-	w.Write(tasks)
-}
-
 func main() {
-	http.HandleFunc("/", handler)
-	log.Println("Starting test server on port 2000.")
-	http.ListenAndServe(":2000", nil)
+	secrets := auth.GetFromEnv()
+	config := auth.GetOAuth2Config(secrets, auth.TC_API_SCOPES)
+
+	token := &oauth2.Token{
+		AccessToken:  "get this from gauthman",
+		RefreshToken: "get this from gauthman",
+		Expiry:       time.Unix(1641532911, 0).UTC(),
+	}
+
+	client, err := auth.GetClient(config, token)
+
+	if err != nil {
+		log.Fatalf("Failed to get client: %v", err)
+	}
+
+	srv, err := auth.GetService(client)
+	if err != nil {
+		log.Fatalf("Failed to get service: %v", err)
+	}
+
+	courses, err := call.ListCourses(srv)
+	if err != nil {
+		log.Fatalf("Failed to get courses: %v", err)
+	}
+
+	start := time.Now()
+	assignments, err := fetch.FetchAllRelevant(srv, courses)
+	if err != nil {
+		log.Fatalf("Failed to fetch assignments: %v", err)
+	}
+	elapsed := time.Since(start)
+	log.Printf("Fetched %d assignments in %s", len(assignments), elapsed)
+
+	for _, assignment := range assignments {
+		log.Printf("%v", assignment.Work.Title)
+	}
 }
