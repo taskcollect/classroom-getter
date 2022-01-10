@@ -3,48 +3,60 @@ package main
 import (
 	"log"
 	"main/auth"
-	"main/call"
-	"main/fetch"
-	"time"
+	"main/handlers"
+	"net/http"
+	"os"
 
 	"golang.org/x/oauth2"
 )
 
+type ServerConfig struct {
+	BindAddr string
+	OAuth2   *oauth2.Config
+}
+
+// server config, values here will get overriden by env
+var config = ServerConfig{
+	BindAddr: "0.0.0.0:2000",
+	OAuth2:   nil,
+}
+
+func makeMux() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	handler := handlers.NewBaseHandler(config.OAuth2)
+
+	mux.HandleFunc("/v1/tasks", handler.ActiveTasks)
+
+	return mux
+}
+
+func configure(c *ServerConfig) {
+	bindAddr, exists := os.LookupEnv("BIND_ADDR")
+	if exists {
+		if bindAddr == "" {
+			log.Fatalln("(cfg) empty bind address supplied, cannot bind")
+		}
+		c.BindAddr = bindAddr
+	} else {
+		log.Printf("(cfg) no bind address supplied, defaulting to '%s'", c.BindAddr)
+	}
+}
+
 func main() {
-	secrets := auth.GetFromEnv()
-	config := auth.GetOAuth2Config(secrets, auth.TC_API_SCOPES)
+	log.Println("Initializing config from environment variables...")
 
-	token := &oauth2.Token{
-		AccessToken:  "get this from gauthman",
-		RefreshToken: "get this from gauthman",
-		Expiry:       time.Unix(1641532911, 0).UTC(),
-	}
+	configure(&config)
 
-	client, err := auth.GetClient(config, token)
+	log.Println("Initializing OAuth2 credentials...")
+	oa2secret := auth.GetFromEnv()
 
-	if err != nil {
-		log.Fatalf("Failed to get client: %v", err)
-	}
+	config.OAuth2 = auth.GetOAuth2Config(oa2secret, auth.TC_API_SCOPES)
 
-	srv, err := auth.GetService(client)
-	if err != nil {
-		log.Fatalf("Failed to get service: %v", err)
-	}
+	log.Printf("Starting server binded to %s...", config.BindAddr)
 
-	courses, err := call.ListCourses(srv)
-	if err != nil {
-		log.Fatalf("Failed to get courses: %v", err)
-	}
+	mux := makeMux()
+	http.ListenAndServe(config.BindAddr, handlers.RequestLogger(mux))
 
-	start := time.Now()
-	assignments, err := fetch.FetchAllRelevant(srv, courses)
-	if err != nil {
-		log.Fatalf("Failed to fetch assignments: %v", err)
-	}
-	elapsed := time.Since(start)
-	log.Printf("Fetched %d assignments in %s", len(assignments), elapsed)
-
-	for _, assignment := range assignments {
-		log.Printf("%v", assignment.Work.Title)
-	}
+	log.Println("Server exited. Cleaning up...")
 }
