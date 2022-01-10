@@ -1,6 +1,9 @@
 package auth
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
 type OAuth2Secrets struct {
 	ClientID     string
@@ -16,9 +19,19 @@ func getenv_safe(name string) string {
 	panic("environment variable " + name + " not specified")
 }
 
-func GetFromEnv() *OAuth2Secrets {
-	return &OAuth2Secrets{
-		ClientID:     getenv_safe("CLIENT_ID"),
-		ClientSecret: getenv_safe("CLIENT_SECRET"),
+func GetSecretsFromEnv() (*OAuth2Secrets, error) {
+	id := os.Getenv("CLIENT_ID")
+	if id == "" {
+		return nil, errors.New("CLIENT_ID not set or empty in environment")
 	}
+
+	secret := os.Getenv("CLIENT_SECRET")
+	if secret == "" {
+		return nil, errors.New("CLIENT_SECRET not set or empty in environment")
+	}
+
+	return &OAuth2Secrets{
+		ClientID:     id,
+		ClientSecret: secret,
+	}, nil
 }

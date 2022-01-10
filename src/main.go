@@ -41,17 +41,19 @@ func configure(c *ServerConfig) {
 	} else {
 		log.Printf("(cfg) no bind address supplied, defaulting to '%s'", c.BindAddr)
 	}
+
+	secrets, err := auth.GetSecretsFromEnv()
+	if err != nil {
+		log.Fatalln("(cfg) error in credential init:", err.Error())
+	}
+
+	config.OAuth2 = auth.GetOAuth2Config(secrets, auth.TC_API_SCOPES)
 }
 
 func main() {
 	log.Println("Initializing config from environment variables...")
 
 	configure(&config)
-
-	log.Println("Initializing OAuth2 credentials...")
-	oa2secret := auth.GetFromEnv()
-
-	config.OAuth2 = auth.GetOAuth2Config(oa2secret, auth.TC_API_SCOPES)
 
 	log.Printf("Starting server binded to %s...", config.BindAddr)
 
