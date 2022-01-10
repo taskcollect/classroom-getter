@@ -1,20 +1,20 @@
-package fetch
+package util
 
 import (
-	"log"
 	"main/call"
 	"sync"
 
 	"google.golang.org/api/classroom/v1"
 )
 
-type CompleteInfo struct {
+type WorkAndSubmission struct {
 	Work       *classroom.CourseWork
 	Submission *classroom.StudentSubmission
+	Course     *classroom.Course
 }
 
-func FetchAllRelevant(srv *classroom.Service, courses []*classroom.Course) ([]*CompleteInfo, error) {
-	ch_ci := make(chan *CompleteInfo)
+func FetchWorksAndSubmissions(srv *classroom.Service, courses []*classroom.Course) ([]*WorkAndSubmission, error) {
+	ch_ci := make(chan *WorkAndSubmission)
 	var wg_ci sync.WaitGroup
 
 	// for each course
@@ -26,14 +26,10 @@ func FetchAllRelevant(srv *classroom.Service, courses []*classroom.Course) ([]*C
 		go func(course *classroom.Course) {
 			defer wg_ci.Done() // release one from wait group on function end
 
-			log.Println("spawned course goroutine for course: ", course.Name)
-
 			subs, err := call.ListAllActiveSubmissions(srv, course)
 			if err != nil {
 				return
 			}
-
-			log.Println("got active submissions for: ", course.Name)
 
 			// waitgroup for all coursework fetches
 			var wg_cw sync.WaitGroup
@@ -46,18 +42,14 @@ func FetchAllRelevant(srv *classroom.Service, courses []*classroom.Course) ([]*C
 				go func(sub *classroom.StudentSubmission, course *classroom.Course) {
 					defer wg_cw.Done() // release one from wait group on function end
 
-					log.Println("spawned submission goroutine for course: ", course.Name, ", submission: ", sub.Id)
-
 					// call the api (this takes a long time)
 					work, err := call.GetCourseWorkByID(srv, course, sub.CourseWorkId)
 					if err != nil {
 						return
 					}
 
-					log.Println("got coursework for course: ", course.Name, ", submission: ", sub.Id)
-
 					// send back a complete info struct on complete info channel
-					ch_ci <- &CompleteInfo{work, sub}
+					ch_ci <- &WorkAndSubmission{work, sub, course}
 				}(sub, course)
 			}
 
@@ -74,7 +66,7 @@ func FetchAllRelevant(srv *classroom.Service, courses []*classroom.Course) ([]*C
 	}()
 
 	// collect all the complete info structs
-	var out []*CompleteInfo
+	var out []*WorkAndSubmission
 
 	for ci := range ch_ci {
 		// add something that came in on the channel to the output
